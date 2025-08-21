@@ -33,54 +33,52 @@ die()  { printf "\033[1;31m%s\033[0m\n" "xx  $*"; exit 1; }
 
 need curl || die "此腳本需要 curl"
 
-# 安裝 Docker / docker compose plugin（盡量通用）
+# 安裝 Docker 適用centos7.9
 install_docker() {
-  if need docker && docker compose version >/dev/null 2>&1; then
-    say "Docker 與 docker compose 已就緒"
-    return
-  fi
+    echo -e "${YELLOW}準備安裝 Docker (指定版本)...${RESET}"
 
-  say "安裝 Docker（會依發行版自動判斷）"
-  if need apt-get; then
-    apt-get update -y
-    apt-get install -y ca-certificates curl gnupg lsb-release
-    install -d -m 0755 /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
-      $(. /etc/os-release; echo "$VERSION_CODENAME") stable" \
-      > /etc/apt/sources.list.d/docker.list
-    apt-get update -y
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    systemctl enable --now docker
-  elif need dnf; then
-    dnf -y install dnf-plugins-core
-    dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo || true
-    dnf -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    systemctl enable --now docker
-  elif need yum; then
-    yum install -y yum-utils
-    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo || true
-    yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-    systemctl enable --now docker
-  elif need zypper; then
-    zypper refresh
-    zypper install -y docker
-    systemctl enable --now docker
-    # docker compose plugin 可能需另裝；若無則 fallback 用 docker compose v2 二進位
-  elif need pacman; then
-    pacman -Sy --noconfirm docker
-    systemctl enable --now docker
-  else
-    warn "偵測不到常見套件管理器，嘗試繼續（系統需自備 docker 與 docker compose plugin）"
-  fi
+    local DOCKER_VERSION="24.0.7-1.el7"
 
-  if ! docker compose version >/dev/null 2>&1; then
-    warn "找不到 docker compose plugin，嘗試安裝獨立 compose v2"
-    curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
-    ln -sf /usr/local/bin/docker-compose /usr/local/bin/docker-compose-v2 || true
-  fi
+    if command -v docker >/dev/null 2>&1; then
+        local INSTALLED_VERSION
+        INSTALLED_VERSION=$(docker --version | awk '{print $3}' | tr -d ',')
+        if [[ "$INSTALLED_VERSION" == "${DOCKER_VERSION%%-*}"* ]]; then
+            echo -e "${GREEN}Docker 已安裝版本：$INSTALLED_VERSION，符合要求，略過安裝。${RESET}"
+            return 0
+        else
+            echo -e "${YELLOW}檢測到不同版本的 Docker ($INSTALLED_VERSION)，將先移除舊版本。${RESET}"
+            yum remove -y docker docker-* || true
+        fi
+    fi
+
+    yum install -y yum-utils || {
+        echo -e "${RED}安裝 yum-utils 失敗${RESET}"
+        echo -e "${YELLOW}請確認網路或 yum 鏡像設定是否正確${RESET}"
+        exit 1
+    }
+
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo || {
+        echo -e "${RED}新增 Docker repo 失敗${RESET}"
+        echo -e "${YELLOW}請確認 DNS 或 download.docker.com 是否可連線${RESET}"
+        exit 1
+    }
+
+    echo -e "${YELLOW}安裝 Docker ${DOCKER_VERSION}...${RESET}"
+    yum install -y \
+        docker-ce-${DOCKER_VERSION} \
+        docker-ce-cli-${DOCKER_VERSION} \
+        containerd.io || {
+        echo -e "${RED}安裝 Docker ${DOCKER_VERSION} 失敗${RESET}"
+        echo -e "${YELLOW}請確認版本是否存在，或考慮手動更換版本${RESET}"
+        exit 1
+    }
+
+    systemctl start docker || error_exit "無法啟動 Docker"
+    systemctl enable docker || error_exit "無法設定 Docker 開機自動啟動"
+
+    local FINAL_VERSION
+    FINAL_VERSION=$(docker --version | awk '{print $3}' | tr -d ',')
+    echo -e "${GREEN}Docker ${FINAL_VERSION} 安裝完成！${RESET}"
 }
 
 # ========= 清理舊版本（容錯） =========
