@@ -10,7 +10,7 @@ RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}
 APP_USER="root"
 BASE_DIR="/opt/ping_tools"
 BIN_PATH="/usr/local/bin/ping_tools"
-IMAGE_NAME="ping_tools:latest"
+IMAGE_NAME="ping_tools-ping_tools"
 CONTAINER_NAME="ping_tools"
 
 FILES_TO_FETCH=(
@@ -113,6 +113,7 @@ NAME="ping_tools"
 case "${1:-}" in
   start)   cd "$BASE_DIR" && docker compose up -d ;;
   stop)    cd "$BASE_DIR" && docker compose down ;;
+  rm)      rm -rf "$BASE_DIR" || true; rm -f "$BIN_PATH" || true; docker rm -f "$NAME" || true; docker rmi "$IMAGE_NAME" || true ;;
   restart) cd "$BASE_DIR" && docker compose restart || (docker compose up -d) ;;
   status)  docker ps -a | grep -E "$NAME" || true; echo; docker logs --tail=200 "$NAME" || true ;;
   calc)    docker exec -it "$NAME" bash /opt/ping_tools/calculate_failure_rate.sh ;;
