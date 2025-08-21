@@ -7,7 +7,7 @@ services:
     restart: always
     volumes:
       # ip list
-      - ./china_ip_list:/opt/ping_tools/china_ip_list
+      - ./ip_list:/opt/ping_tools/ip_list
 
       # log 路徑
       - ./all_log_dir:/opt/ping_tools/all_log_dir
