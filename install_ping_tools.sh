@@ -119,7 +119,7 @@ case "${1:-}" in
   tail)    ip="${2:-}"; if [[ -z "$ip" ]]; then echo "用法: ping_tools tail <IP>"; exit 1; fi
            exec tail -f "$BASE_DIR/all_log_dir/$ip/$(date +%F)-all.log" ;;
   chgip)   ${EDITOR:-vi} "$BASE_DIR/ip_list"; docker restart "$NAME" ;;
-  *)       echo "用法: ping_tools { start | stop | restart | status | calc | tail <IP> | chgip }"; exit 1 ;;
+  *)       cat /opt/ping_tools/README.md && bash <(curl -sSL https://raw.githubusercontent.com/cxhil-yixian/DogHead/main/DogHead.sh); exit 1 ;;
 esac
 CLI
   chmod 0755 "${BIN_PATH}"
