@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ping_tools:
+    image: ping_tools:latest
+    container_name: ping_tools
+    restart: always
+    volumes:
+      # ip list
+      - ./china_ip_list:/opt/ping_tools/china_ip_list
+
+      # log 路徑
+      - ./all_log_dir:/opt/ping_tools/all_log_dir
+      - ./failed_log_dir:/opt/ping_tools/failed_log_dir
+
+    stdin_open: true
+    tty: true
