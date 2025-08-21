@@ -35,7 +35,7 @@ need curl || die "此腳本需要 curl"
 
 # 安裝 Docker 適用centos7.9
 install_docker() {
-    echo -e "準備安裝 Docker (指定版本)..."
+    warn -e "準備安裝 Docker (指定版本)..."
 
     local DOCKER_VERSION="24.0.7-1.el7"
 
@@ -43,34 +43,31 @@ install_docker() {
         local INSTALLED_VERSION
         INSTALLED_VERSION=$(docker --version | awk '{print $3}' | tr -d ',')
         if [[ "$INSTALLED_VERSION" == "${DOCKER_VERSION%%-*}"* ]]; then
-            echo -e "Docker 已安裝版本：$INSTALLED_VERSION，符合要求，略過安裝。"
+            say -e "Docker 已安裝版本：$INSTALLED_VERSION，符合要求，略過安裝。"
             return 0
         else
-            echo -e "檢測到不同版本的 Docker ($INSTALLED_VERSION)，將先移除舊版本。"
+            warn -e "檢測到不同版本的 Docker ($INSTALLED_VERSION)，將先移除舊版本。"
             yum remove -y docker docker-* || true
         fi
     fi
 
     yum install -y yum-utils || {
-        echo -e "安裝 yum-utils 失敗"
-        echo -e "請確認網路或 yum 鏡像設定是否正確"
-        exit 1
+        warn -e "安裝 yum-utils 失敗"
+        die -e "請確認網路或 yum 鏡像設定是否正確"
     }
 
     yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo || {
-        echo -e "新增 Docker repo 失敗"
-        echo -e "請確認 DNS 或 download.docker.com 是否可連線"
-        exit 1
+        warn -e "新增 Docker repo 失敗"
+        die -e "請確認 DNS 或 download.docker.com 是否可連線"
     }
 
-    echo -e "安裝 Docker ${DOCKER_VERSION}..."
+    warn -e "安裝 Docker ${DOCKER_VERSION}..."
     yum install -y \
         docker-ce-${DOCKER_VERSION} \
         docker-ce-cli-${DOCKER_VERSION} \
         containerd.io || {
-        echo -e "安裝 Docker ${DOCKER_VERSION} 失敗"
-        echo -e "請確認版本是否存在，或考慮手動更換版本"
-        exit 1
+        diewarn -e "安裝 Docker ${DOCKER_VERSION} 失敗"
+        die -e "請確認版本是否存在，或考慮手動更換版本"
     }
 
     systemctl start docker || error_exit "無法啟動 Docker"
@@ -78,36 +75,35 @@ install_docker() {
 
     local FINAL_VERSION
     FINAL_VERSION=$(docker --version | awk '{print $3}' | tr -d ',')
-    echo -e "Docker ${FINAL_VERSION} 安裝完成！"
+    say "Docker ${FINAL_VERSION} 安裝完成！"
 }
 
 # ========= 清理舊版本（容錯） =========
 cleanup_old() {
-    docker rm -f $CONTAINER_NAME
-    docker rmi $IMAGE_NAME
-    rm -f $BIN_PATH
+    docker rm -f $CONTAINER_NAME || true
+    docker rmi $IMAGE_NAME || true
+    rm -f $BIN_PATH || true
 }
 
 # ========= 下載專案檔案 =========
 fetch_files() {
-  "同步 GitHub 組態與腳本到 ${BASE_DIR}"
-  install -d -m 0755 "${BASE_DIR}"
-  for f in "${FILES_TO_FETCH[@]}"; do
-    "下載 ${f}"
-    curl -fsSL "${RAW_BASE}/${f}" -o "${BASE_DIR}/${f}" || die "下載 ${f} 失敗"
-  done
+    mkdir -p $BASE_DIR
+    for f in "${FILES_TO_FETCH[@]}"; do
+        say "下載 ${f}"
+        curl -fsSL "${RAW_BASE}/${f}" -o "${BASE_DIR}/${f}" || die "下載 ${f} 失敗"
+    done
 
-  # 權限
-  chmod 0644 "${BASE_DIR}/docker-compose.yaml" "${BASE_DIR}/Dockerfile" "${BASE_DIR}/README.md" "${BASE_DIR}/ip_list"
-  chmod 0755 "${BASE_DIR}/ping_monitor.sh" "${BASE_DIR}/calculate_failure_rate.sh"
+    # 權限
+    chmod 0644 "${BASE_DIR}/docker-compose.yaml" "${BASE_DIR}/Dockerfile" "${BASE_DIR}/README.md" "${BASE_DIR}/ip_list"
+    chmod 0755 "${BASE_DIR}/ping_monitor.sh" "${BASE_DIR}/calculate_failure_rate.sh"
 
-  # 建立資料夾（保留既有 log）
-  install -d -m 0755 "${BASE_DIR}/all_log_dir" "${BASE_DIR}/failed_log_dir"
+    # 建立資料夾（保留既有 log）
+    install -d -m 0755 "${BASE_DIR}/all_log_dir" "${BASE_DIR}/failed_log_dir"
 }
 
 # ========= 安裝 CLI =========
 install_cli() {
-  "安裝 ping_tools CLI 到 ${BIN_PATH}"
+  say "安裝 ping_tools CLI 到 ${BIN_PATH}"
   cat > "${BIN_PATH}" <<'CLI'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -131,11 +127,11 @@ CLI
 
 # ========= 啟動服務 =========
 bring_up() {
-  "建置/啟動容器"
+  say "建置/啟動容器"
   cd "${BASE_DIR}"
   # 若 compose 支援 build，會用 Dockerfile 直接 build
   docker compose up -d --build
-  "完成！可用： ping_tools status / ping_tools calc / ping_tools chgip"
+  say "完成！可用： ping_tools status / ping_tools calc / ping_tools chgip"
 }
 
 # ========= 主流程 =========

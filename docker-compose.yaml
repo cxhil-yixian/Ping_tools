@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   ping_tools:
-    image: ping_tools:latest
+    build: .
     container_name: ping_tools
     restart: always
     volumes:
