@@ -10,12 +10,11 @@ RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}
 APP_USER="root"
 BASE_DIR="/opt/ping_tools"
 BIN_PATH="/usr/local/bin/ping_tools"
-IMAGE_NAME="ping_tools-ping_tools"
+IMAGE_NAME="xian12375/ping_tools:latest"
 CONTAINER_NAME="ping_tools"
 
 FILES_TO_FETCH=(
   "docker-compose.yaml"
-  "Dockerfile"
   "ping_monitor.sh"
   "calculate_failure_rate.sh"
   "README.md"
@@ -94,7 +93,7 @@ fetch_files() {
     done
 
     # 權限
-    chmod 0644 "${BASE_DIR}/docker-compose.yaml" "${BASE_DIR}/Dockerfile" "${BASE_DIR}/README.md" "${BASE_DIR}/ip_list"
+    chmod 0644 "${BASE_DIR}/docker-compose.yaml" "${BASE_DIR}/README.md" "${BASE_DIR}/ip_list"
     chmod 0755 "${BASE_DIR}/ping_monitor.sh" "${BASE_DIR}/calculate_failure_rate.sh"
 
     # 建立資料夾（保留既有 log）
@@ -109,6 +108,8 @@ install_cli() {
 set -euo pipefail
 BASE_DIR="/opt/ping_tools"
 NAME="ping_tools"
+BIN_PATH="/usr/local/bin/ping_tools"
+IMAGE_NAME="xian12375/ping_tools:latest"
 
 case "${1:-}" in
   start)   cd "$BASE_DIR" && docker compose up -d ;;
@@ -131,7 +132,7 @@ bring_up() {
   say "建置/啟動容器"
   cd "${BASE_DIR}"
   # 若 compose 支援 build，會用 Dockerfile 直接 build
-  docker compose up -d --build
+  docker compose up -d
   say "完成！可用： ping_tools status / ping_tools calc / ping_tools chgip"
 }
 

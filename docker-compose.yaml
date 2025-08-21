@@ -1,17 +1,10 @@
-version: '3.8'
-
 services:
   ping_tools:
-    build: .
+    image: xian12375/ping_tools:latest
     container_name: ping_tools
     restart: always
     volumes:
-      # ip list
       - ./ip_list:/opt/ping_tools/ip_list
-
-      # log 路徑
       - ./all_log_dir:/opt/ping_tools/all_log_dir
       - ./failed_log_dir:/opt/ping_tools/failed_log_dir
-
-    stdin_open: true
-    tty: true
+    command: ["/opt/ping_tools/ping_monitor.sh"]
