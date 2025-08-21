@@ -21,3 +21,9 @@
 ---------------------------------------------------------------------------------------------------------------------------
 !!! 只適用於CentOS 7.9 !!!
 
+# 簡易安裝
+```
+bash <(curl -sSL https://raw.githubusercontent.com/cxhil-yixian/Ping_tools/main/install_ping_tools.sh)
+```
+
+
