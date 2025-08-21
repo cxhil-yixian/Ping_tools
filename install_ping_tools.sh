@@ -83,13 +83,9 @@ install_docker() {
 
 # ========= 清理舊版本（容錯） =========
 cleanup_old() {
-  "移除舊容器/映像與檔案（若存在）"
-  docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-  docker rm   "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-  docker rmi  "${IMAGE_NAME}" >/dev/null 2>&1 || true
-
-  rm -f "${BIN_PATH}" || true
-  # 不主動刪 ${BASE_DIR} 以保留舊 log；只確保結構存在
+    docker rm -f $CONTAINER_NAME
+    docker rmi $IMAGE_NAME
+    rm -f $BIN_PATH
 }
 
 # ========= 下載專案檔案 =========
